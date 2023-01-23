@@ -1,13 +1,29 @@
 import { GenerateDatesFromRange } from "../utils/GenerateDatesFromRange"
 import { HabitNode } from "./HabitNode"
+import { useEffect, useState } from "react";
+import { api } from "../lib/axios";
+import dayjs from "dayjs";
 
 const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 
+let summaryDays = GenerateDatesFromRange()
+let numberOfPlaceHolders = 18 * 7 - summaryDays.length
+
+type Summary = Array<{
+    id : string;
+    date: string;
+    available: number;
+    completed: number;
+}>
+
 export function SummaryTable(){
+    const [summary, setSummary] = useState<Summary>([]) 
 
-    let summaryDays = GenerateDatesFromRange()
-
-    let numberOfPlaceHolders = 18 * 7 - summaryDays.length
+    useEffect(() => {
+        api.get('summary').then(response => {
+            setSummary(response.data)
+        })
+    }, [])
 
     return(
         <div className="w-full flex">
@@ -25,10 +41,15 @@ export function SummaryTable(){
             </div>
             <div className="grid grid-rows-7 grid-flow-col gap-3">
                 {summaryDays.map(date =>{
-                      return (
+                    const dayInSummary = summary.find(day => {
+                        return dayjs(date).isSame(day.date, 'day')
+                    })
+
+                    return (
                       <HabitNode 
-                        completed={4} 
-                        available={5} 
+                        date={date}
+                        completed={dayInSummary?.completed} 
+                        available={dayInSummary?.available} 
                         key={date.toString()}
                     />)  
                 })}
