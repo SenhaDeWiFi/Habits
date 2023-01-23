@@ -25,12 +25,17 @@ export function SummaryTable(){
             </div>
             <div className="grid grid-rows-7 grid-flow-col gap-3">
                 {summaryDays.map(date =>{
-                      return <HabitNode key={date.toString()}/>  
+                      return (
+                      <HabitNode 
+                        completed={4} 
+                        available={5} 
+                        key={date.toString()}
+                    />)  
                 })}
 
-                {numberOfPlaceHolders > 0 && Array.from({length: numberOfPlaceHolders}).map(() =>{
+                {numberOfPlaceHolders > 0 && Array.from({length: numberOfPlaceHolders}).map((_, i) =>{
                     return(
-                        <div className="w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-30"></div>
+                        <div key={i} className="w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-30"></div>
                     )
                 })}
             </div>
