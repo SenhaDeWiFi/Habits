@@ -1,18 +1,56 @@
-import { Text, View, ScrollView } from "react-native";
+import { Text, View, ScrollView, Alert } from "react-native";
 import { DAY_SIZE, HabitNode } from "../components/HabitNode";
 import { Header } from "../components/Header";
+import { Loading } from "../components/Loading";
 import { GenerateDatesFromRange} from "../utils/GenerateDatesFromRange";
 import { useNavigation } from "@react-navigation/native";
 
+import { api } from "../lib/axios";
+import { useState, useEffect } from "react";
+import dayjs from "dayjs";
 
 const weekDays = ['D','S','T','Q','Q','S','S']
 const dates = GenerateDatesFromRange();
 const minmumSummaryDatesSize = 18 * 5;
 const amountOfDaysToFill = minmumSummaryDatesSize - dates.length
 
+type SummaryProps = Array<{
+    id: string
+    date: string
+    available: number
+    completed: number
+}>
+
 export function Home(){
 
+    const [loading, setloading] = useState(true)
+    const [summary, setSummary] = useState<SummaryProps | null>(null)
+
     const { navigate } = useNavigation()
+
+    async function fetchData() {
+        try {
+            setloading(true)
+            const response = await api.get('/summary')
+            setSummary(response.data)
+        } catch (error) {
+            Alert.alert('Deu xabu!')
+            console.log(error)
+        } finally{
+            setloading(false)
+        }
+    }
+    
+    useEffect(() => {
+        fetchData()
+    }, [])
+
+    if (loading) {
+        return(
+            <Loading></Loading>
+        )
+    }
+
     return(
         <View className="flex-1 bg-background px-4 pt-16">
             <Header />
@@ -34,15 +72,26 @@ export function Home(){
             <ScrollView
                 showsVerticalScrollIndicator = {false}
                 contentContainerStyle = {{paddingBottom: 50}}>
-                <View className="flex-row flex-wrap ">
+                {
+                summary &&
+                <View className="flex-row flex-wrap">
                     { 
-                    dates.map((date) => (
-                        <HabitNode 
-                            key={`${date}`}
-                            onPress={() => navigate('habit', { date: date.toISOString() })}
-                        >
-                        </HabitNode>
-                        ))}
+                        dates.map((date) => {
+                            const daysWithStuff = summary.find(day =>{
+                                return dayjs(date).isSame(day.date, 'day')
+                            })
+
+                            return(
+                                <HabitNode
+                                    date={date}
+                                    availableHabits={daysWithStuff?.available}
+                                    completedHabits={daysWithStuff?.completed} 
+                                    key={`${date}`}
+                                    onPress={() => navigate('habit', { date: date.toISOString() })}
+                                />
+                            )
+                        })
+                    }
                 
                 {
                     amountOfDaysToFill > 0 && Array.from({length: amountOfDaysToFill})
@@ -54,7 +103,8 @@ export function Home(){
                         />
                     ))
                 }
-                </View> 
+                </View>
+                } 
             </ScrollView>    
         </View>
     )
